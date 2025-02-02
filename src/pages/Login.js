@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -6,6 +6,13 @@ function Login() {
     const [user_email, setUseremail] = useState('');
     const [error_msg, setErrormsg] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const user = sessionStorage.getItem('user');
+        if (user) {
+            navigate('/search');
+        }
+    }, []);
 
     const handleLogin = async () => {
         // Valid username and password
@@ -22,10 +29,20 @@ function Login() {
                 }),
                 credentials: 'include'
             });
-            console.log(response);
+            // console.log(response);
             if (response.status === 200 && response.ok) {
-                console.log('Login successful');
+                // console.log('Login successful');
                 setErrormsg('');
+
+                // Save user to session storage
+                sessionStorage.setItem('user', JSON.stringify({ 
+                    name: user_name, 
+                    email: user_email, 
+                }));
+
+                // Dispatch custom event
+                window.dispatchEvent(new Event('userUpdate'));
+
                 // Redirect to home page
                 navigate('/search');
 

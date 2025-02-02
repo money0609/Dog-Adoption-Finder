@@ -1,42 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Checkbox, TextField, Autocomplete, Button, Typography, FormControl, Slider, SwipeableDrawer, Divider, List, ListItem, InputLabel, ListItemIcon, Select, MenuItem, Box, Chip, useMediaQuery, useTheme } from '@mui/material';
+import { Checkbox, TextField, Autocomplete, Button, Typography, FormControl, Slider, SwipeableDrawer, Divider, List, ListItem, InputLabel, ListItemIcon, Select, MenuItem, Box, Chip } from '@mui/material';
 
 import PetsIcon from '@mui/icons-material/Pets';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
-export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilterOpen}) {
-    const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
-    const minSwipeDistance = 50;
-
-    const handleTouchStart = (e) => {
-        console.log('Touch Start:', isMobile);
-        if (!isMobile) return;
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchMove = (e) => {
-        if (!isMobile) return;
-        setTouchEnd(e.targetTouches[0].clientX);
-        console.log('Touch Move:', e.targetTouches[0].clientX);
-    };
-
-    const handleTouchEnd = () => {
-        if (!isMobile || !touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        console.log('Touch End - Distance:', distance);
-        const isLeftSwipe = distance > minSwipeDistance;
-        if (isLeftSwipe && isFilterOpen) {
-            console.log('Closing filter');
-            setIsFilterOpen(false);
-        }
-    };
-
+export default function Filter({breeds, onFilterSubmit}) {
+    const [state, setState] = useState(false);
     const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
     const checkedIcon = <CheckBoxIcon fontSize="small" />;
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,13 +18,13 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
       { value: 'age:desc', label: 'Age: Oldest First' },
       { value: 'name:asc', label: 'Name: A to Z' },
       { value: 'name:desc', label: 'Name: Z to A' },
-      { value: 'zipCodes:asc', label: 'ZIP Code: Ascending' },
-      { value: 'zipCodes:desc', label: 'ZIP Code: Descending' }
+      { value: 'zip_code:asc', label: 'ZIP Code: Ascending' },
+      { value: 'zip_code:desc', label: 'ZIP Code: Descending' }
     ];
     const [filters, setFilters] = useState({ 
       breeds: [], 
       age: [0, 25],
-      zipCodes: [],
+      zipCode: '',
       sort: 'breed:asc',
       location: {
           city: '',
@@ -81,31 +52,25 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
     //       left: { lat, lon: lon - deltaLon }
     //   };
     // };
-    // const toggleDrawer = (open) => (event) => {
-    //   console.log('toggleDrawer', open, event);
-    //   if (
-    //     event &&
-    //     event.type === 'keydown' &&
-    //     (event.key === 'Tab' || event.key === 'Shift')
-    //   ) {
-    //     return;
-    //   }
+    const toggleDrawer = (open) => (event) => {
+      if (
+        event &&
+        event.type === 'keydown' &&
+        (event.key === 'Tab' || event.key === 'Shift')
+      ) {
+        return;
+      }
   
-    //   setState(open);
-    // };
+      setState(open);
+    };
 
-    // useEffect(() => {
-    //   console.log('isFilterOpen', isFilterOpen);
-    //   setState(isFilterOpen);
-    // }, [isFilterOpen]);
-    
     const isValidZipCode = (zip) => /^\d{5}$/.test(zip);
     // Add handler for zip codes
     const handleZipCodeChange = (event, zip) => {
       console.log('Zip filter: ', zip);
       // Remove any duplicates and invalid zip codes
       const validZips = isValidZipCode(zip);
-      setFilters({ ...filters, zipCodes: [zip] });
+      setFilters({ ...filters, zipCode: validZips });
     };
     const handleSubmit = async () => {
       setIsSubmitting(true);
@@ -122,24 +87,8 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
       } finally {
           setIsSubmitting(false);
       }
-    };
+  };
   
-    const handleCancelFilters = () => {
-      setFilters({
-          breeds: [],
-          age: [0, 25],
-          zipCodes: [],
-          sort: 'breed:asc',
-          location: {
-              city: '',
-              states: []
-          }
-      });
-      // setFilters({ ...filters, zipCodes: [] });
-      // setState(false);
-      setIsFilterOpen(false);
-
-    };
   // const getCityStateCoordinates = async (city, state) => {
   //   try {
   //       // Use first location as city center
@@ -213,6 +162,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
   //       throw error;
   //   }
   // };
+
     const list = () => (
       <Box
         sx={{ width: 'auto' }}
@@ -249,7 +199,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
             ))}
           </Select>
         </FormControl>
-        {/* <Typography variant="h6">Location Search</Typography>
+        <Typography variant="h6">Location Search</Typography>
         
         <TextField
             fullWidth
@@ -260,7 +210,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                 location: { ...filters.location, city: e.target.value }
             })}
             sx={{ mt: 2 }}
-        /> */}
+        />
 
         {/* <Autocomplete
             multiple
@@ -285,7 +235,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                 />
             )}
         /> */}
-        {/* <Autocomplete
+        <Autocomplete
           options={[
               'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
               'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -309,7 +259,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                   sx={{ mt: 2 }}
               />
           )}
-      /> */}
+      />
         {/* <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Search Distance</InputLabel>
             <Select
@@ -330,7 +280,10 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
             </Select>
         </FormControl> */}
         <List>
-          {/* <ListItem key='Breed' disablePadding> */}
+          <ListItem key='Breed' disablePadding>
+              <ListItemIcon>
+                  <PetsIcon color="primary" />
+              </ListItemIcon>
               {/* <Autocomplete
                 multiple
                 id="breeds-checkbox"
@@ -358,24 +311,24 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                   <TextField {...params} label="Breeds" placeholder="Breeds" />
                 )}
               /> */}
-          {/* </ListItem> */}
+              <Autocomplete
+                options={breeds}
+                value={filters.breeds[0] || null}
+                onChange={(_, newValue) => setFilters({
+                    ...filters,
+                    breeds: newValue ? [newValue] : []
+                })}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        label="Select Breed"
+                        placeholder="Choose a breed"
+                        sx={{ mt: 2 }}
+                    />
+                )}
+              />
+          </ListItem>
 
-          <Autocomplete
-            options={breeds}
-            value={filters.breeds[0] || null}
-            onChange={(_, newValue) => setFilters({
-                ...filters,
-                breeds: newValue ? [newValue] : []
-            })}
-            renderInput={(params) => (
-                <TextField
-                    {...params}
-                    label="Select Breed"
-                    placeholder="Choose a breed"
-                    sx={{ mt: 2 }}
-                />
-            )}
-          />
 
           <Box sx={{ mt: 2 }}>
               <Typography>Age Range</Typography>
@@ -392,8 +345,8 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
               sx={{ mt: 2 }}
               fullWidth
               label="ZIP Code"
-              value={filters.zipCodes[0] || ''}
-              onChange={(e) => setFilters({ ...filters, zipCodes: [e.target.value] })}
+              value={filters.zipCode}
+              onChange={(e) => setFilters({ ...filters, zipCode: e.target.value })}
           />
           {/* <Autocomplete
               multiple
@@ -429,67 +382,26 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
           >
               {isSubmitting ? 'Applying Filters...' : 'Apply Filters'}
           </Button>
-          <Button
-              sx={{ mt: 2 }}
-              fullWidth
-              variant="outlined"
-              color='default'
-              onClick={handleCancelFilters}
-              disabled={isSubmitting}
-          >
-              Cancel
-          </Button>
         </List>
       </Box>
     );
   
     return (
-      <Box
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        sx={{
-            position: {
-                xs: 'fixed',
-                md: 'relative'
-            },
-            top: {
-                xs: 0,
-                md: 'auto'
-            },
-            left: 0,
-            width: {
-                xs: isFilterOpen ? '-webkit-fill-available' : '0',
-                md: isFilterOpen ? '320px' : '0'
-            },
-            height: '100vh',
-            opacity: isFilterOpen ? 1 : 0,
-            transform: {
-                xs: isFilterOpen ? 'translateX(0)' : 'translateX(-100%)',
-                md: isFilterOpen ? 'translateX(0)' : 'translateX(-320px)'
-            },
-            visibility: isFilterOpen ? 'visible' : 'hidden',
-            bgcolor: 'background.paper',
-            p: isFilterOpen ? 2 : 0,
-            transition: theme => theme.transitions.create(
-                ['transform', 'width', 'opacity'],
-                {
-                    duration: theme.transitions.duration.standard,
-                    easing: isFilterOpen ? 
-                        'cubic-bezier(0.0, 0, 0.2, 1)' : 
-                        'cubic-bezier(0.4, 0, 1, 1)'
-                }
-            ),
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            zIndex: {
-                xs: 1200,
-                md: 1
-            },
-            boxShadow: 1
-        }}
-    >
-        {list()}
-    </Box>
+      <div>
+        {
+          <React.Fragment key='left'>
+            <Button id='filter_sort_button' onClick={toggleDrawer(true)}>Filter & Sort <FilterListIcon/></Button>
+            <SwipeableDrawer
+              anchor='left'
+              open={state}
+              onClose={toggleDrawer(false)}
+              onOpen={toggleDrawer(true)}
+            >
+              {list()}
+            </SwipeableDrawer>
+          </React.Fragment>
+        }
+      </div>
     );
   }
+

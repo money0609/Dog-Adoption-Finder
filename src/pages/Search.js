@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, SwipeableDrawer, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box } from '@mui/material';
+import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, SwipeableDrawer, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Container, useMediaQuery, useTheme } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import Filter from '../components/Filter';
 import BestMatch from '../components/BestMatch';
+import ResponsiveFilter from '../components/ResponsiveFilter';
 
 function Search() {
+    
+    // redirect to login page if user is not logged in
+    useEffect(() => {
+        const user = sessionStorage.getItem('user');
+        if (!user) {
+            window.location.href = '/';
+        }
+    }, []);
     const [dogs, setDogs] = useState([]);
     const [filteredDogs, setFilteredDogs] = useState([]);
     const [dogIds, setDogIds] = useState([]);
@@ -27,7 +37,9 @@ function Search() {
     const [showFilters, setShowFilters] = useState(false);
     const [bestMatchDog, setBestMatchDog] = useState(null);
     const [bestMatchOpen, setBestMatchOpen] = useState(false);
-    
+    const [locationMap, setLocationMap] = useState(new Map());
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+
     const BATCH_SIZE = 10000;
     const DOGS_PER_PAGE = 20;
     let fisrt_call = `${process.env.REACT_APP_SEARCH_DOGS_IDS_ENDPOINT}?from=0&size=${BATCH_SIZE}&sort=breed:asc`;
@@ -41,13 +53,14 @@ function Search() {
             const response = await search_dogs_ids(url);
             
             setDogIds(prev => [...prev, ...response.resultIds]);
-            setNextUrl(response.next);
-            setHasMore(!!response.next);
-            
+            console.log('currentPage:', currentPage);
             // Fetch dogs for first page
             if (currentPage === 1) {
                 await get_dogs_by_ids(response.resultIds.slice(0, DOGS_PER_PAGE));
             }
+            setNextUrl(response.next);
+            setHasMore(!!response.next);
+            
         } catch (error) {
             console.error('Error fetching dog IDs:', error);
         } finally {
@@ -83,6 +96,21 @@ function Search() {
     useEffect(() => {
         console.log('favorites:', favorites);
     }, [favorites]);
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+    useEffect(() => {
+        if (isMobile && isFilterOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isFilterOpen, isMobile]);
 
     const get_available_breeds = async () => {
         try {
@@ -153,6 +181,8 @@ function Search() {
             setDogs(response);
             setFilteredDogs(response);
 
+            await search_dogs_locations_by_zip(response);
+            
         } catch (error) {
             console.error('Unable to fetch dogs by ids', error);
             throw error;
@@ -160,18 +190,34 @@ function Search() {
         
     };
 
-    const handleFilterChange = (e) => {
-        const selectedBreed = e.target.value;
-        setBreed(selectedBreed);
-        setCurrentPage(1); // Reset to first page when filtering
-        
-        if (selectedBreed === '') {
-            setFilteredDogs(dogs);
-        } else {
-            const filtered = dogs.filter(dog => 
-                dog.breed.toLowerCase().includes(selectedBreed.toLowerCase())
+    const search_dogs_locations_by_zip = async (dogs = []) => {
+        try {
+            if (!dogs || dogs.length === 0) return;
+    
+            const dog_zips = dogs.map(dog => dog.zip_code);
+            const response = await fetch(`${process.env.REACT_APP_FETCH_REWARDS}/locations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dog_zips),
+                credentials: 'include'
+            });
+    
+            if (!response.ok) {
+                throw new Error('Unable to fetch locations');
+            }
+    
+            const locations = await response.json();
+            // Convert locations array to Map for O(1) lookup
+            const locMap = new Map(
+                locations.map(loc => [loc.zip_code, loc])
             );
-            setFilteredDogs(filtered);
+            setLocationMap(locMap);
+            return locMap;
+        } catch (error) {
+            console.error('Unable to fetch locations', error);
+            throw error;
         }
     };
 
@@ -183,36 +229,13 @@ function Search() {
     };
 
     const handleFavoriteClick = (dog) => {
-        setFavorites(prev => {
-            const isFavorite = prev.some(fav => fav.id === dog.id);
-            if (isFavorite) {
-                return prev.filter(fav => fav.id !== dog.id);
-            } else {
-                return [...prev, dog];
-            }
-        });
-    };
-
-    const handleAddFilter = (type, value, label) => {
-        setActiveFilters(prev => [...prev, {
-            type,
-            value,
-            label: `${type}: ${label}`
-        }]);
-    };
-
-    const handleRemoveFilter = (filterToRemove) => {
-        setActiveFilters(prev => prev.filter(filter => 
-            filter.type !== filterToRemove.type || 
-            filter.value !== filterToRemove.value
-        ));
-    };
-
-    const handleClearFilters = () => {
-        setActiveFilters([]);
-        setBreed('');
-        setAge([0, 20]);
-        setZipCode('');
+        const newFavorites = favorites.some(fav => fav.id === dog.id)
+            ? favorites.filter(fav => fav.id !== dog.id)
+            : [...favorites, dog];
+        
+        setFavorites(newFavorites);
+        sessionStorage.setItem('favorites', JSON.stringify(newFavorites));
+        window.dispatchEvent(new Event('favoritesUpdate'));
     };
 
     const handleFilterSubmit = async (filters) => {
@@ -281,106 +304,145 @@ function Search() {
     }
     
     return (
-        <div className="search">
-            <h1>Search</h1>
-            <div>
-                <Filter breeds={breeds} onFilterSubmit={handleFilterSubmit} />
-            </div>
-            <div className="dog-list">
-                {filteredDogs && filteredDogs?.map(dog => (
-                     <Card sx={{ maxWidth: 345 }} classes={{ root: 'dog-item' }} key={dog.id}>
-                        <CardMedia
-                            component="img"
-                            alt={dog.name}
-                            image={dog.img}
-                        />
-                        <CardContent>
-                            <Typography gutterBottom variant="h5" component="div">
-                                {dog.name}
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                Breed: {dog.breed}
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                Age: {dog.age}
-                            </Typography>
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                                Zip: {dog.zip_code}
-                            </Typography>
-                        </CardContent>
-                        <CardActions className='dog-item-actions' disableSpacing>
-                            <Tooltip title="Add" placement="top">
-                                <IconButton 
-                                    aria-label="add to favorites"
-                                    onClick={() => handleFavoriteClick(dog)}
-                                    sx={{
-                                        color: favorites.some(fav => fav.id === dog.id) ? 'red' : 'outline',
-                                        transition: 'color 0.3s ease'
+        <Container maxWidth="xl" id="search_page_container">
+            <Button id='filter_sort_button' onClick={() => setIsFilterOpen(!isFilterOpen)} variant="outlined" endIcon={<FilterListIcon />}>
+                Filter & Sort
+            </Button>
+            <Box className="search" sx={{ display: 'flex'}}>
+                {/* Filter section with animation */}
+                <Box sx={{
+                    width: isFilterOpen ? 'auto' : 0,
+                    overflow: 'hidden',
+                    transition: 'width 0.3s ease'
+                }}>
+                    <Filter 
+                        breeds={breeds} 
+                        onFilterSubmit={handleFilterSubmit}
+                        isFilterOpen={isFilterOpen}
+                        setIsFilterOpen={setIsFilterOpen}
+                    />
+                </Box>
+                <Box sx={{ 
+                    flex: 1,
+                    transition: 'margin-left 0.3s ease'
+                }}>
+                    <div className="dog-list">
+                        {filteredDogs && filteredDogs?.map(dog => (
+                            <Card sx={{ maxWidth: 345 }} classes={{ root: 'dog-item' }} key={dog.id}>
+                                <CardMedia
+                                    component="img"
+                                    alt={dog.name}
+                                    image={dog.img}
+                                />
+                                <CardContent>
+                                    <Typography gutterBottom variant="h5" component="div">
+                                        {dog.name}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                        Breed: {dog.breed}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                        Age: {dog.age}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                        {locationMap.get(dog.zip_code)?.city}, {locationMap.get(dog.zip_code)?.state} {dog.zip_code}
+                                    </Typography>
+                                </CardContent>
+                                <CardActions 
+                                    className='dog-item-actions' 
+                                    disableSpacing 
+                                    sx={{ 
+                                        display: 'flex',
+                                        justifyContent: 'center'
                                     }}
                                 >
-                                    <FavoriteIcon /> 
-                                    <Typography variant="h5" sx={{ color: 'text.secondary' }}>
-                                        Add to Favorites
-                                    </Typography>
-                                </IconButton>
-                            </Tooltip>
-                            {/* <Button size="large" onClick={()=>{window.alert('Adopt feature coming soon...')}}>Adopt</Button> */}
-                        </CardActions>
-                    </Card>
-                ))}
-                
-            </div>
-            <div className='pagination'>
-                {dogIds.length && <Pagination count={dogIds.length / DOGS_PER_PAGE} page={currentPage} onChange={handlePageChange} />}
-            </div>
-            <Zoom
-                in={favorites.length > 0}
-                timeout={300}
-                style={{
-                    transitionDelay: favorites.length > 0 ? '300ms' : '0ms',
-                }}
-            >
-                <Box sx={{ position: 'fixed', bottom: 20, right: 20, textAlign: 'center' }}>
-                    {/* <Typography
-                        variant="subtitle2"
-                        sx={{
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            color: 'white',
-                            p: 1,
-                            borderRadius: 1,
-                            mb: 1
+                                    <Tooltip title="Add to favorites" placement="top">
+                                        <IconButton 
+                                            aria-label="add to favorites"
+                                            onClick={() => handleFavoriteClick(dog)}
+                                            sx={{
+                                                color: favorites.some(fav => fav.id === dog.id) ? 'red' : 'outline',
+                                                transition: 'color 0.3s ease'
+                                            }}
+                                        >
+                                            {favorites.some(fav => fav.id === dog.id) ? 
+                                                <FavoriteIcon fontSize='large' /> : 
+                                                <FavoriteBorderIcon fontSize='large' />
+                                            }
+                                        </IconButton>
+                                    </Tooltip>
+                                    {/* <Button size="large" onClick={()=>{window.alert('Adopt feature coming soon...')}}>Adopt</Button> */}
+                                </CardActions>
+                            </Card>
+                        ))}
+                        
+                    </div>
+                    <div className='pagination'>
+                        {dogIds.length && <Pagination count={dogIds.length / DOGS_PER_PAGE} page={currentPage} onChange={handlePageChange} showFirstButton={true} showLastButton={true} size={'large'}/>}
+                    </div>
+                    <Zoom
+                        in={favorites.length > 0}
+                        timeout={300}
+                        style={{
+                            transitionDelay: favorites.length > 0 ? '300ms' : '0ms',
                         }}
                     >
-                        Next: Find Your Match!
-                    </Typography> */}
-                    <Fab
-                        variant="extended"
-                        color="error"
-                        aria-label="find match"
-                        sx={{
-                            animation: 'glow 1.5s ease-in-out infinite alternate',
-                            '@keyframes glow': {
-                                from: {
-                                    boxShadow: '0 0 5px #ff4081, 0 0 10px #ff4081, 0 0 15px #ff4081'
-                                },
-                                to: {
-                                    boxShadow: '0 0 10px #ff4081, 0 0 20px #ff4081, 0 0 30px #ff4081'
-                                }
-                            }
-                        }}
-                        onClick={handleBestMatch}
-                    >
-                        <FavoriteIcon sx={{ mr: 1 }} />
-                        Find Your Match ({favorites.length})
-                    </Fab>
+                        <Box sx={{ position: 'fixed', bottom: 20, right: 20, textAlign: 'center' }}>
+                            {/* <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    color: 'white',
+                                    p: 1,
+                                    borderRadius: 1,
+                                    mb: 1
+                                }}
+                            >
+                                Next: Find Your Match!
+                            </Typography> */}
+                            <Fab
+                                variant="extended"
+                                color="error"
+                                aria-label="find match"
+                                sx={{
+                                    animation: 'glow 1.5s ease-in-out infinite alternate',
+                                    '@keyframes glow': {
+                                        from: {
+                                            boxShadow: '0 0 5px #ff4081, 0 0 10px #ff4081, 0 0 15px #ff4081'
+                                        },
+                                        to: {
+                                            boxShadow: '0 0 10px #ff4081, 0 0 20px #ff4081, 0 0 30px #ff4081'
+                                        }
+                                    }
+                                }}
+                                onClick={handleBestMatch}
+                            >
+                                <FavoriteIcon sx={{ mr: 1 }} />
+                                Find Your Match ({favorites.length})
+                            </Fab>
+                        </Box>
+                    </Zoom>
                 </Box>
-            </Zoom>
-            <BestMatch 
-                dog={bestMatchDog}
-                open={bestMatchOpen}
-                onClose={() => setBestMatchOpen(false)}
-            />
-        </div>
+                <BestMatch 
+                    dog={bestMatchDog}
+                    open={bestMatchOpen}
+                    onClose={() => setBestMatchOpen(false)}
+                />
+                {/* Toggle button */}
+                {/* <IconButton
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    sx={{
+                        position: 'fixed',
+                        left: isFilterOpen ? 260 : 20,
+                        top: 20,
+                        transition: 'left 0.3s ease',
+                        zIndex: 1000
+                    }}
+                >
+                    Filter & Sort <FilterListIcon/>
+                </IconButton> */}
+            </Box>
+        </Container>
     );
 }
 
