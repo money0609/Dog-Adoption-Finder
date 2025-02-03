@@ -11,7 +11,7 @@ function Login() {
     useEffect(() => {
         const user = sessionStorage.getItem('user');
         if (user) {
-            navigate('/search');
+            navigate('/');
         }
     }, []);
 
@@ -45,14 +45,12 @@ function Login() {
                 window.dispatchEvent(new Event('userUpdate'));
 
                 // Redirect to home page
-                navigate('/search');
+                navigate('/');
 
             } else {
-                console.log('Login failed');
                 setErrormsg('Invalid username or password');
             }
         } catch (error) {
-            console.error('Error:', error);
             setErrormsg('Something went wrong, please try again later.');
         }
     };
@@ -84,7 +82,6 @@ function Login() {
             <FormControl fullWidth error={error_msg}>
                 <TextField
                     sx={{ mt: 1 }}
-                    isRequired={true}
                     fullWidth
                     label="Name"
                     value={user_name}
@@ -92,7 +89,6 @@ function Login() {
                 />
                 <TextField
                     sx={{ mt: 1 }}
-                    isRequired={true}
                     fullWidth
                     label="Email"
                     value={user_email}

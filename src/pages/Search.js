@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, SwipeableDrawer, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Box, Container, useMediaQuery, useTheme, Backdrop, CircularProgress  } from '@mui/material';
+import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, Paper, Box, Container, useMediaQuery, useTheme, Backdrop, CircularProgress  } from '@mui/material';
 
-import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import ClearIcon from '@mui/icons-material/Clear';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import Filter from '../components/Filter';
 import BestMatch from '../components/BestMatch';
-import ResponsiveFilter from '../components/ResponsiveFilter';
 
 function Search() {
     
@@ -16,25 +13,17 @@ function Search() {
     useEffect(() => {
         const user = sessionStorage.getItem('user');
         if (!user) {
-            window.location.href = '/';
+            window.location.href = '/login';
         }
     }, []);
-    const [dogs, setDogs] = useState([]);
     const [filteredDogs, setFilteredDogs] = useState([]);
     const [dogIds, setDogIds] = useState([]);
-    const [breed, setBreed] = useState('');
     const [breeds, setBreeds] = useState([]);
-    const [page, setPage] = useState(1);
-    const [dogsPerPage, setDogsPerPage] = useState(20);
     const [favorites, setFavorites] = useState([]);
     const [nextUrl, setNextUrl] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [activeFilters, setActiveFilters] = useState([]);
-    const [age, setAge] = useState([0, 20]);
-    const [zipCode, setZipCode] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
     const [bestMatchDog, setBestMatchDog] = useState(null);
     const [bestMatchOpen, setBestMatchOpen] = useState(false);
     const [locationMap, setLocationMap] = useState(new Map());
@@ -58,7 +47,6 @@ function Search() {
             }
             setNextUrl(response.next);
             setHasMore(!!response.next);
-            console.log('LocationMap:', locationMap);
         } catch (error) {
             console.error('Error fetching dog IDs:', error);
         } finally {
@@ -75,25 +63,11 @@ function Search() {
         }
     }, []);
 
-    // useEffect(() => {
-    //     const remainingPages = dogIds.length / DOGS_PER_PAGE - currentPage;
-    //     console.log('remainingPages:', remainingPages, hasMore, !isLoading, nextUrl);
-    //     if (remainingPages < 5 && hasMore && !isLoading && nextUrl) {
-    //         console.log('fetching more dogs');
-    //         fetchDogIds(nextUrl);
-    //     }
-    // }, [currentPage, dogIds.length, hasMore, isLoading, nextUrl]);
     useEffect(() => {
-        console.log('remaining calls:', hasMore, nextUrl);
         if (hasMore && nextUrl) {
-            console.log('fetching more dogs');
             fetchDogIds(nextUrl);
         }
     }, [hasMore, nextUrl]);
-
-    useEffect(() => {
-        console.log('favorites:', favorites);
-    }, [favorites]);
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -115,7 +89,7 @@ function Search() {
         if (response.status === 401) {
             // Session expired, clear storage and redirect
             sessionStorage.clear();
-            window.location.href = '/';
+            window.location.href = '/login';
             return true;
         }
         return false;
@@ -140,7 +114,6 @@ function Search() {
             }
 
             const response =  await available_breeds.json();
-            console.log('available_breeds:', response);
             setBreeds(response);
 
         } catch (error) {
@@ -164,7 +137,6 @@ function Search() {
                 throw new Error('Unable to fetch dog ids', search_dogs.json());
             }
             const response = await search_dogs.json();
-            console.log('search_dogs:', response);
             return response;
         } catch (error) {
             console.error('Unable to fetch dog ids:', error);
@@ -194,7 +166,6 @@ function Search() {
 
             const response = await dogs.json();
 
-            setDogs(response);
             setFilteredDogs(response);
 
             await search_dogs_locations_by_zip(response);
@@ -202,7 +173,6 @@ function Search() {
         } catch (error) {
             throw error;
         }
-        
     };
 
     const search_dogs_locations_by_zip = async (dogs = []) => {
@@ -267,7 +237,6 @@ function Search() {
         if (filters.breeds.length) {
             queryParams.append('breeds', filters.breeds.join(','));
         }
-        console.log('filters:', filters);
         if (filters.zipCodes && filters.zipCodes.length) {
 
             queryParams.append('zipCodes', filters.zipCodes.join(','));
@@ -282,8 +251,6 @@ function Search() {
         setHasMore(true);
         setCurrentPage(1);
         await fetchDogIds(url);
-        console.log('filters:', filters);
-        console.log('queryParams:', queryParams.toString());
     };
 
     const handleBestMatch = async () => {
@@ -291,7 +258,6 @@ function Search() {
             const favoriteIds = favorites.map(dog => dog.id);
         
             if (favoriteIds.length === 0) {
-                console.warn('No favorites selected');
                 return;
             }
             
@@ -330,7 +296,6 @@ function Search() {
             setBestMatchOpen(true);
 
         } catch (error) {
-            console.error('Unable to find best match dog', error);
             setIsLoading(false);
             throw error;
         }

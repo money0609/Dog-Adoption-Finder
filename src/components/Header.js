@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppBar, Box, Toolbar, Typography, Button, IconButton, Avatar, Menu, Tooltip, Container, MenuItem } from '@mui/material';
-import { deepOrange, deepPurple } from '@mui/material/colors';
-import MenuIcon from '@mui/icons-material/Menu';
 import PetsIcon from '@mui/icons-material/Pets';
 
-const pages = [''];
 const settings = ['Profile', 'Logout'];
 
 export default function Header() {
@@ -14,7 +11,6 @@ export default function Header() {
     });
 
     useEffect(() => {
-        console.log('Header useEffect');
         const updateUser = () => {
             const savedUser = sessionStorage.getItem('user');
             setUser(savedUser ? JSON.parse(savedUser) : null);
@@ -28,18 +24,10 @@ export default function Header() {
         };
     }, []);
 
-    const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
 
-    const handleOpenNavMenu = (event) => {
-        setAnchorElNav(event.currentTarget);
-    };
     const handleOpenUserMenu = (event) => {
         setAnchorElUser(event.currentTarget);
-    };
-
-    const handleCloseNavMenu = () => {
-        setAnchorElNav(null);
     };
 
     const handleCloseUserMenu = () => {
@@ -52,7 +40,7 @@ export default function Header() {
             window.location.href = '/profile';
         } else if (setting === 'Logout') {       
             sessionStorage.removeItem('user');
-            window.location.href = '/';
+            window.location.href = '/login';
         }
     };
   return (
@@ -71,7 +59,7 @@ export default function Header() {
                         variant="h6"
                         noWrap
                         component="a"
-                        href="/search"
+                        href="/"
                         sx={{
                             mr: 2,
                             display: { xs: 'none', md: 'flex' },
@@ -84,41 +72,6 @@ export default function Header() {
                     >
                         Adopt A Dog
                     </Typography>
-
-                    {/* <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
-                        <IconButton
-                            size="large"
-                            aria-label="account of current user"
-                            aria-controls="menu-appbar"
-                            aria-haspopup="true"
-                            onClick={handleOpenNavMenu}
-                            color="inherit"
-                        >
-                        <MenuIcon />
-                        </IconButton>
-                        <Menu
-                            id="menu-appbar"
-                            anchorEl={anchorElNav}
-                            anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'left',
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'left',
-                            }}
-                            open={Boolean(anchorElNav)}
-                            onClose={handleCloseNavMenu}
-                            sx={{ display: { xs: 'block', md: 'none' } }}
-                        >
-                            {pages.map((page) => (
-                                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                                    <Typography sx={{ textAlign: 'center' }}>{page}</Typography>
-                                </MenuItem>
-                            ))}
-                        </Menu>
-                    </Box> */}
                     <PetsIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
                     <Typography
                         variant="h5"
@@ -138,50 +91,48 @@ export default function Header() {
                     >
                         Adopt A Dog
                     </Typography>
-                    {/* <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                        {pages.map((page) => (
-                        <Button
-                            key={page}
-                            onClick={handleCloseNavMenu}
-                            sx={{ my: 2, color: 'white', display: 'block' }}
-                        >
-                            {page}
-                        </Button>
-                        ))}
-                    </Box> */}
                     <Box sx={{ 
                         flexGrow: 0,
                         display: 'flex',
                         justifyContent: 'flex-end',
                         ml: 'auto'  // This pushes the Box to the right
                     }}>
-                        <Tooltip title="Open settings">
-                            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar sx={{ bgcolor: 'rgb(255, 169, 0)' }}>{user?.name}</Avatar>
-                            </IconButton>
-                        </Tooltip>
-                        <Menu
-                            sx={{ mt: '45px' }}
-                            id="menu-appbar"
-                            anchorEl={anchorElUser}
-                            anchorOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            keepMounted
-                            transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
-                            }}
-                            open={Boolean(anchorElUser)}
-                            onClose={handleCloseUserMenu}
-                        >
-                        {settings.map((setting) => (
-                            <MenuItem key={setting} onClick={() => handleSettingClick(setting)}>
-                                <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
-                            </MenuItem>
-                        ))}
-                        </Menu>
+                        {
+                            user
+                            ?
+                            <>
+                                <Tooltip title="Open settings">
+                                    <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                                        <Avatar sx={{ bgcolor: 'rgb(255, 169, 0)' }}>{user?.name}</Avatar>
+                                    </IconButton>
+                                </Tooltip>
+                                <Menu
+                                    sx={{ mt: '45px' }}
+                                    id="menu-appbar"
+                                    anchorEl={anchorElUser}
+                                    anchorOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'right',
+                                    }}
+                                    keepMounted
+                                    transformOrigin={{
+                                        vertical: 'top',
+                                        horizontal: 'right',
+                                    }}
+                                    open={Boolean(anchorElUser)}
+                                    onClose={handleCloseUserMenu}
+                                >
+                                {settings.map((setting) => (
+                                    <MenuItem key={setting} onClick={() => handleSettingClick(setting)}>
+                                        <Typography sx={{ textAlign: 'center' }}>{setting}</Typography>
+                                    </MenuItem>
+                                ))}
+                                </Menu>
+                            </>
+                            :
+                            <Button variant='contained' sx={{ bgcolor: 'rgb(255, 169, 0)' }} onClick={() => window.location.href = '/login'}>Login</Button>
+                        }
+                        
                     </Box>
                 </Toolbar>
             </Container>    

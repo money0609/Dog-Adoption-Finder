@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Box, 
-    Paper, 
-    TextField, 
-    Button, 
+    Paper,
     Typography,
     Container
 } from '@mui/material';
@@ -14,7 +12,7 @@ export default function Profile () {
     useEffect(() => {
         const user = sessionStorage.getItem('user');
         if (!user) {
-            window.location.href = '/';
+            window.location.href = '/login';
         }
     }, []);
 
@@ -35,12 +33,6 @@ export default function Profile () {
                     <Typography color="text.secondary" sx={{ mb: 2 }}>
                         Email: {user?.email}
                     </Typography>
-                    {/* <Button 
-                        variant="outlined"
-                        onClick={() => setIsEditing(true)}
-                    >
-                        Edit Profile
-                    </Button> */}
                 </Box>
             </Paper>
         </Container>

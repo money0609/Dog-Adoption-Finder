@@ -11,8 +11,8 @@ function App() {
             <Header />
             <Router>
                 <Routes>
-                    <Route path="/" element={<Login />} />
-                    <Route path="/search" element={<Search />} />
+                    <Route path="/" element={<Search />} />
+                    <Route path="/login" element={<Login />} />
                     <Route path="/profile" element={<Profile />} />
                 </Routes>
             </Router>

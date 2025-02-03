@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Checkbox, TextField, Autocomplete, Button, Typography, FormControl, Slider, SwipeableDrawer, Divider, List, ListItem, InputLabel, ListItemIcon, Select, MenuItem, Box, Chip, useMediaQuery, useTheme, FormHelperText } from '@mui/material';
-
-import PetsIcon from '@mui/icons-material/Pets';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import { TextField, Autocomplete, Button, Typography, FormControl, Slider, Divider, InputLabel, Select, MenuItem, Box, useMediaQuery, useTheme, FormHelperText } from '@mui/material';
 
 export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilterOpen}) {
     const theme = useTheme();
@@ -14,7 +9,6 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
     const minSwipeDistance = 50;
 
     const handleTouchStart = (e) => {
-        console.log('Touch Start:', isMobile);
         if (!isMobile) return;
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientX);
@@ -23,22 +17,19 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
     const handleTouchMove = (e) => {
         if (!isMobile) return;
         setTouchEnd(e.targetTouches[0].clientX);
-        console.log('Touch Move:', e.targetTouches[0].clientX);
+        // console.log('Touch Move:', e.targetTouches[0].clientX);
     };
 
     const handleTouchEnd = () => {
         if (!isMobile || !touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
-        console.log('Touch End - Distance:', distance);
+        // console.log('Touch End - Distance:', distance);
         const isLeftSwipe = distance > minSwipeDistance;
         if (isLeftSwipe && isFilterOpen) {
-            console.log('Closing filter');
             setIsFilterOpen(false);
         }
     };
 
-    const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-    const checkedIcon = <CheckBoxIcon fontSize="small" />;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const sortOptions = [
       { value: 'breed:asc', label: 'Breed: A to Z' },
@@ -55,10 +46,7 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
       sort: 'breed:asc',
       location: {
           city: '',
-          states: [],
-          // size: 10000,
-          // distance: 25, // miles
-          // geoBoundingBox: null
+          states: []
       }
     });
 
@@ -66,57 +54,23 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
         city: false,
         state: false
     });
-    // const distanceOptions = [
-    //   { value: 5, label: '5 miles' },
-    //   { value: 10, label: '10 miles' },
-    //   { value: 25, label: '25 miles' },
-    //   { value: 50, label: '50 miles' }
-    // ];
-    // const calculateBoundingBox = (lat, lon, distance) => {
-    //   const milesPerDegree = 69;
-    //   const deltaLat = distance / milesPerDegree;
-    //   const deltaLon = distance / (Math.cos(lat * Math.PI / 180) * milesPerDegree);
-  
-    //   return {
-    //       top: { lat: lat + deltaLat, lon },
-    //       right: { lat, lon: lon + deltaLon },
-    //       bottom: { lat: lat - deltaLat, lon },
-    //       left: { lat, lon: lon - deltaLon }
-    //   };
-    // };
-    // const toggleDrawer = (open) => (event) => {
-    //   console.log('toggleDrawer', open, event);
-    //   if (
-    //     event &&
-    //     event.type === 'keydown' &&
-    //     (event.key === 'Tab' || event.key === 'Shift')
-    //   ) {
-    //     return;
-    //   }
-  
-    //   setState(open);
-    // };
 
-    // useEffect(() => {
-    //   console.log('isFilterOpen', isFilterOpen);
-    //   setState(isFilterOpen);
-    // }, [isFilterOpen]);
-    
-    const isValidZipCode = (zip) => /^\d{5}$/.test(zip);
-    // Add handler for zip codes
-    const handleZipCodeChange = (event, zip) => {
-      console.log('Zip filter: ', zip);
-      // Remove any duplicates and invalid zip codes
-      const validZips = isValidZipCode(zip);
-      setFilters({ ...filters, zipCodes: [zip] });
+    const handleZipCodeChange = (e) => {
+        const zip = e.target.value;
+        if (/^\d{0,5}$/.test(zip)) {
+            setFilters({ ...filters, zipCodes: zip ? [zip] : null });
+        }
     };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
+
         // Reset errors
         setFormErrors({
             city: false,
             state: false
         });
+
         try {
             // validate city and state if either one is present and another is missing
             if (
@@ -131,11 +85,9 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                 return;
             }
 
-            if (filters.location.city || filters.location.states.length > 0) {
-                console.log('filters.location', filters);
+            if (filters.location.city || filters.location.states?.length > 0) {
                 const locations = await searchLocations(filters.location);
                 const lookup_location_res = (locations && locations.length > 0) ? locations[0]?.zip_code : null;
-                console.log('lookup_location_res', lookup_location_res);
                 const updatedFilters = {
                     ...filters,
                     zipCodes: lookup_location_res ? [lookup_location_res] : [],
@@ -167,11 +119,10 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
               states: []
           }
       });
-      // setFilters({ ...filters, zipCodes: [] });
-      // setState(false);
       setIsFilterOpen(false);
 
     };
+
   const getCityStateCoordinates = async (city, state) => {
     try {
         // Use first location as city center
@@ -206,18 +157,6 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
 
   const searchLocations = async (searchParams) => {
     try {
-        // Get coordinates for the first selected state and city
-        // const coordinates = await getCityStateCoordinates(
-        //     searchParams.city,
-        //     searchParams.states[0]
-        // );
-
-        // Calculate bounding box based on city center
-        // const boundingBox = calculateBoundingBox(
-        //     coordinates.latitude,
-        //     coordinates.longitude,
-        //     searchParams.distance
-        // );
 
         const params = {
             city: searchParams.city,
@@ -248,30 +187,14 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
     const list = () => (
       <Box
         sx={{ 
-            width: 'auto',
+            width: '100%',
             padding: { xs: '15px', sm: '20px' },
             display: 'flex',
             flexDirection: 'column',
-            width: '100%',
             gap: 2
         }}
         role="presentation"
-        // onClick={toggleDrawer(false)}
-        // onKeyDown={toggleDrawer(false)}
       >
-        {/* <FormControl fullWidth sx={{ mt: 2 }}>
-          <InputLabel>Sort By</InputLabel>
-          <Select
-              value={filters.sort}
-              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-          >
-              {sortOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                  </MenuItem>
-              ))}
-          </Select>
-        </FormControl> */}
         <FormControl fullWidth>
           <InputLabel id="sortInput">Sort By</InputLabel>
           <Select
@@ -313,7 +236,6 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                 id="state-select"
                 value={(filters.location.states && filters.location.states.length) ? filters.location.states[0] : ''}
                 label="Select State"
-                // helperText={formErrors.state ? "City and State are required when using location search" : ""}
                 onChange={(e) => setFilters({
                     ...filters,
                     location: { 
@@ -341,78 +263,6 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
             <FormHelperText>{formErrors.state ? "City and State are required when using location search" : ""}</FormHelperText>
         </FormControl>
         <Divider sx={{mt: 2}} />
-        {/* <Autocomplete
-            multiple
-            options={[
-                'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-                'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-                'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-                'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-                'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-            ]}
-            value={filters.location.states}
-            onChange={(_, newValue) => setFilters({
-                ...filters,
-                location: { ...filters.location, states: newValue }
-            })}
-            renderInput={(params) => (
-                <TextField
-                    {...params}
-                    label="States"
-                    placeholder="Select states"
-                    sx={{ mt: 2 }}
-                />
-            )}
-        /> */}
-        {/* <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Search Distance</InputLabel>
-            <Select
-                value={filters.location.distance}
-                onChange={(e) => setFilters({
-                    ...filters,
-                    location: { 
-                        ...filters.location, 
-                        distance: e.target.value 
-                    }
-                })}
-            >
-                {distanceOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                    </MenuItem>
-                ))}
-            </Select>
-        </FormControl> */}
-          {/* <ListItem key='Breed' disablePadding> */}
-              {/* <Autocomplete
-                multiple
-                id="breeds-checkbox"
-                options={breeds ?? []}
-                value={filters.breeds}
-                onChange={(_, newValue) => setFilters({ ...filters, breeds: newValue })}
-                disableCloseOnSelect
-                getOptionLabel={(option) => option}
-                renderOption={(props, option, { selected }) => {
-                  const { key, ...optionProps } = props;
-                  return (
-                    <li key={key} {...optionProps}>
-                      <Checkbox
-                        icon={icon}
-                        checkedIcon={checkedIcon}
-                        style={{ marginRight: 8 }}
-                        checked={selected}
-                      />
-                      {option}
-                    </li>
-                  );
-                }}
-                style={{ width: 500 }}
-                renderInput={(params) => (
-                  <TextField {...params} label="Breeds" placeholder="Breeds" />
-                )}
-              /> */}
-          {/* </ListItem> */}
-
         <Box>
             <Typography variant="h6">Breed</Typography>
             <Autocomplete
@@ -453,34 +303,10 @@ export default function Filter({breeds, onFilterSubmit, isFilterOpen, setIsFilte
                 fullWidth
                 label="ZIP Code"
                 value={(filters.zipCodes && filters.zipCodes.length) ? filters.zipCodes[0] : ''}
-                onChange={(e) => setFilters({ ...filters, zipCodes: e.target.value ? [e.target.value] : null })}
+                onChange={handleZipCodeChange}
+                // onChange={(e) => setFilters({ ...filters, zipCodes: e.target.value ? [e.target.value] : null })}
             />
         </Box>
-        {/* <Autocomplete
-            multiple
-            freeSolo
-            options={[]} // Empty array as options since it's free input
-            value={filters.zipCodes}
-            onChange={handleZipCodeChange}
-            renderTags={(value, getTagProps) =>
-                value.map((zip, index) => (
-                    <Chip
-                        label={zip}
-                        {...getTagProps({ index })}
-                        color={isValidZipCode(zip) ? "default" : "error"}
-                    />
-                ))
-            }
-            renderInput={(params) => (
-                <TextField
-                    {...params}
-                    label="ZIP Codes"
-                    placeholder="Enter ZIP code"
-                    helperText="Enter 5-digit ZIP codes"
-                    error={filters.zipCodes.some(zip => !isValidZipCode(zip))}
-                />
-            )}
-        /> */}
         <Divider sx={{mt: 2}} />
         <Button
             sx={{ mt: 2, background: '#ffa900' }}

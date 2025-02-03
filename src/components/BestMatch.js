@@ -22,11 +22,11 @@ const BestMatch = ({ dog, open, onClose }) => {
             onClose={onClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{
-                sx: {
+            slotProps={{ 
+                desktopPaper: { 
                     borderRadius: 2,
-                    bgcolor: 'background.paper',
-                }
+                    backgroundColor: 'background.paper' 
+                } 
             }}
         >
             <DialogTitle 
@@ -36,46 +36,12 @@ const BestMatch = ({ dog, open, onClose }) => {
                     gap: 2
                 }}
             >
-                <Typography variant='h5' sx={{ flex: 1, textAlign: 'center' }}>Your Best Match!</Typography>
-                <IconButton onClick={onClose}>
+                <Typography sx={{ flex: 1, textAlign: 'center', color: '#44acc0', fontSize: '30px' }}>Your Best Match!</Typography>
+                <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8 }}>
                     <CloseIcon />
                 </IconButton>
             </DialogTitle>
             <DialogContent sx={{ display: 'flex', justifyContent: 'center'}}>
-                {/* <Card elevation={0}>
-                    <CardMedia
-                        component="img"
-                        height="300"
-                        image={dog.img}
-                        alt={dog.name}
-                        sx={{ objectFit: 'contain' }}
-                    />
-                    <CardContent>
-                        <Typography gutterBottom variant="h5" component="div">
-                            {dog.name}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            Breed: {dog.breed}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            Age: {dog.age}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            {dog.city ? dog.city + ', ' : ''}{dog.state} {dog.zip_code}
-                        </Typography>
-                    </CardContent>
-                    <CardActions>
-                        <Button 
-                            size="large" 
-                            variant="contained" 
-                            color="primary"
-                            fullWidth
-                            onClick={() => window.alert('Adopt feature coming soon...')}
-                        >
-                            Adopt Me!
-                        </Button>
-                    </CardActions>
-                </Card> */}
                 <Card elevation={0} sx={{ maxWidth: 345 }} classes={{ root: 'dog-item' }} key={'fav_' + dog.id}>
                     <CardMedia
                         component="img"
@@ -104,7 +70,7 @@ const BestMatch = ({ dog, open, onClose }) => {
                             justifyContent: 'center'
                         }}
                     >
-                        <Button size="large" variant="contained" onClick={()=>{window.alert('Adopt feature coming soon...')}}>Adopt Me!</Button>
+                        <Button sx={{ mt: 2, background: '#ffa900' }} size="large" variant="contained" onClick={()=>{window.alert('Adopt feature coming soon...')}}>Adopt Me!</Button>
                     </CardActions>
                 </Card>
             </DialogContent>
