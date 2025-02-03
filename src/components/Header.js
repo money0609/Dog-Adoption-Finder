@@ -56,8 +56,8 @@ export default function Header() {
         }
     };
   return (
-    <Box sx={{ flexGrow: 1, mb: { xs: '80px', md: '90px' }}}>
-        <AppBar position="fixed">
+    <Box sx={{ flexGrow: 1, mb: { xs: '80px', md: '90px' } }}>
+        <AppBar position="fixed" sx={{ backgroundColor: 'rgb(68, 172, 192)' }}>
             <Container maxWidth="xl" id="header_container">
                 <Toolbar 
                     disableGutters 
@@ -126,14 +126,14 @@ export default function Header() {
                         component="a"
                         href="#app-bar-with-responsive-menu"
                         sx={{
-                        mr: 2,
-                        display: { xs: 'flex', md: 'none' },
-                        flexGrow: 1,
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        letterSpacing: '.3rem',
-                        color: 'inherit',
-                        textDecoration: 'none',
+                            mr: 2,
+                            display: { xs: 'flex', md: 'none' },
+                            flexGrow: 1,
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            letterSpacing: '.3rem',
+                            color: 'inherit',
+                            textDecoration: 'none',
                         }}
                     >
                         Adopt A Dog
@@ -157,7 +157,7 @@ export default function Header() {
                     }}>
                         <Tooltip title="Open settings">
                             <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                                <Avatar sx={{ bgcolor: deepOrange[500] }}>{user?.name}</Avatar>
+                                <Avatar sx={{ bgcolor: 'rgb(255, 169, 0)' }}>{user?.name}</Avatar>
                             </IconButton>
                         </Tooltip>
                         <Menu

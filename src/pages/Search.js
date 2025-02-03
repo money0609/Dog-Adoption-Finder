@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, SwipeableDrawer, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Container, useMediaQuery, useTheme } from '@mui/material';
+import {  Fab, Zoom, Card, CardActions, CardContent, CardMedia, Button, Typography, IconButton, Pagination, Tooltip, SwipeableDrawer, Divider, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Box, Container, useMediaQuery, useTheme, Backdrop, CircularProgress  } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -39,6 +39,7 @@ function Search() {
     const [bestMatchOpen, setBestMatchOpen] = useState(false);
     const [locationMap, setLocationMap] = useState(new Map());
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const BATCH_SIZE = 10000;
     const DOGS_PER_PAGE = 20;
@@ -46,21 +47,18 @@ function Search() {
 
     const fetchDogIds = async (url) => {
         try {
-            const params = ['value1', 'value2', 'value3']; // Your array of parameters
-            const queryParams = new URLSearchParams({ params }).toString();
-            console.log('queryParams111:', queryParams);
             setIsLoading(true);
             const response = await search_dogs_ids(url);
             
             setDogIds(prev => [...prev, ...response.resultIds]);
-            console.log('currentPage:', currentPage);
+
             // Fetch dogs for first page
             if (currentPage === 1) {
                 await get_dogs_by_ids(response.resultIds.slice(0, DOGS_PER_PAGE));
             }
             setNextUrl(response.next);
             setHasMore(!!response.next);
-            
+            console.log('LocationMap:', locationMap);
         } catch (error) {
             console.error('Error fetching dog IDs:', error);
         } finally {
@@ -112,6 +110,17 @@ function Search() {
         };
     }, [isFilterOpen, isMobile]);
 
+    const handleSessionExpired = (response) => {
+
+        if (response.status === 401) {
+            // Session expired, clear storage and redirect
+            sessionStorage.clear();
+            window.location.href = '/';
+            return true;
+        }
+        return false;
+        
+    }
     const get_available_breeds = async () => {
         try {
             const available_breeds = await fetch(`${process.env.REACT_APP_FETCH_REWARDS}${process.env.REACT_APP_DOGS_BREED_ENDPOINT}`, {
@@ -121,6 +130,10 @@ function Search() {
                 },
                 credentials: 'include'
             });
+
+            if (handleSessionExpired(available_breeds)) {
+                return;
+            }
 
             if (!available_breeds.ok) {
                 throw new Error('Unable to fetch all breeds');
@@ -171,12 +184,15 @@ function Search() {
                 credentials: 'include'
             });
 
+            if (handleSessionExpired(dogs)) {
+                return;
+            }
+
             if (!dogs.ok) {
                 throw new Error('Unable to fetch dogs by ids');
             }
 
             const response = await dogs.json();
-            console.log('dogs:', response);
 
             setDogs(response);
             setFilteredDogs(response);
@@ -184,7 +200,6 @@ function Search() {
             await search_dogs_locations_by_zip(response);
             
         } catch (error) {
-            console.error('Unable to fetch dogs by ids', error);
             throw error;
         }
         
@@ -203,6 +218,10 @@ function Search() {
                 body: JSON.stringify(dog_zips),
                 credentials: 'include'
             });
+
+            if (handleSessionExpired(response)) {
+                return;
+            }
     
             if (!response.ok) {
                 throw new Error('Unable to fetch locations');
@@ -211,7 +230,8 @@ function Search() {
             const locations = await response.json();
             // Convert locations array to Map for O(1) lookup
             const locMap = new Map(
-                locations.map(loc => [loc.zip_code, loc])
+                locations?.filter(loc => loc && loc.zip_code) // Filter out null/undefined locations
+                    .map(loc => [loc.zip_code, loc]) || []
             );
             setLocationMap(locMap);
             return locMap;
@@ -229,6 +249,9 @@ function Search() {
     };
 
     const handleFavoriteClick = (dog) => {
+        // get new favorite dog's city and state
+        dog.city = locationMap.get(dog.zip_code)?.city;
+        dog.state = locationMap.get(dog.zip_code)?.state;
         const newFavorites = favorites.some(fav => fav.id === dog.id)
             ? favorites.filter(fav => fav.id !== dog.id)
             : [...favorites, dog];
@@ -239,11 +262,14 @@ function Search() {
     };
 
     const handleFilterSubmit = async (filters) => {
+        setIsInitialLoad(false);
         const queryParams = new URLSearchParams();
         if (filters.breeds.length) {
             queryParams.append('breeds', filters.breeds.join(','));
         }
-        if (filters.zipCodes.length) {
+        console.log('filters:', filters);
+        if (filters.zipCodes && filters.zipCodes.length) {
+
             queryParams.append('zipCodes', filters.zipCodes.join(','));
         }
         queryParams.append('ageMin', filters.age[0]);
@@ -269,6 +295,7 @@ function Search() {
                 return;
             }
             
+            setIsLoading(true);
             setBestMatchDog(null);
             const response = await fetch(`${process.env.REACT_APP_FETCH_REWARDS}${process.env.REACT_APP_FIND_MATCH_ENDPOINT}`, {
                 method: 'POST',
@@ -278,6 +305,10 @@ function Search() {
                 body: JSON.stringify(favoriteIds),
                 credentials: 'include'
             });
+
+            if (handleSessionExpired(response)) {
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Unable to find best match dog');
@@ -293,18 +324,79 @@ function Search() {
             const bestMatch = favorites.find(dog => 
                 dog.id === matchedDogId.match
             );
-            console.log('bestMatch:', bestMatch);
+            
             setBestMatchDog(bestMatch);
+            setIsLoading(false);
             setBestMatchOpen(true);
 
         } catch (error) {
             console.error('Unable to find best match dog', error);
+            setIsLoading(false);
             throw error;
         }
     }
     
     return (
         <Container maxWidth="xl" id="search_page_container">
+            <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: { xs: 0.5, sm: 1 },
+                background: 'rgb(236, 236, 236)',
+                borderRadius: '1rem',
+                mb: { xs: '20px', sm: '35px' },
+                padding: { xs: '15px', sm: '20px' }
+            }}>
+                <Typography variant="h2" sx={{
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    color: 'rgb(255, 169, 0)',
+                    fontSize: {
+                        xs: '2.1rem',
+                        sm: '2.25rem',
+                        md: '3rem'
+                    }
+                }}>
+                    Meet dogs available for adoption
+                </Typography>
+                <Typography 
+                    variant="h5" 
+                    sx={{ 
+                        color: '#424242',
+                        fontSize: {
+                            xs: '1.1rem',
+                            sm: '1.25rem',
+                            md: '1.5rem'
+                        } 
+                    }}
+                >
+                    🐾 Browse our lovely dogs looking for their forever homes
+                </Typography>
+                <Typography 
+                    variant="h5" 
+                    sx={{ 
+                        color: '#424242',
+                        fontSize: {
+                            xs: '1.1rem',
+                            sm: '1.25rem',
+                            md: '1.5rem'
+                        } 
+                    }}
+                >💝 Save your favorites and let us help find your perfect match
+                </Typography>
+                <Typography 
+                    variant="h5" 
+                    sx={{ 
+                        color: '#424242',
+                        fontSize: {
+                            xs: '1.1rem',
+                            sm: '1.25rem',
+                            md: '1.5rem'
+                        } 
+                    }}
+                >🏠 Filter by breed, age, and location to find nearby dogs
+                </Typography>
+            </Box>
             <Button id='filter_sort_button' onClick={() => setIsFilterOpen(!isFilterOpen)} variant="outlined" endIcon={<FilterListIcon />}>
                 Filter & Sort
             </Button>
@@ -327,6 +419,70 @@ function Search() {
                     transition: 'margin-left 0.3s ease'
                 }}>
                     <div className="dog-list">
+                        {
+                            filteredDogs && filteredDogs.length === 0
+                            ?
+                            <Box 
+                                sx={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    minHeight: '50vh'
+                                }}
+                            >
+                                <Paper 
+                                    elevation={3}
+                                    sx={{
+                                        p: 4,
+                                        borderRadius: 2,
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    {isInitialLoad ? (
+                                        <>
+                                            <Typography variant="h4" sx={{
+                                                fontFamily: 'monospace',
+                                                fontWeight: 700,
+                                                color: 'text.primary'
+                                            }}>
+                                                One moment... Fetching our dog friends...
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ 
+                                                mt: 2,
+                                                color: 'text.secondary'
+                                            }}>
+                                                Use filters to find your perfect companion
+                                            </Typography>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Typography 
+                                                variant="h4" 
+                                                sx={{
+                                                    fontFamily: 'monospace',
+                                                    fontWeight: 700,
+                                                    color: 'text.primary'
+                                                }}
+                                            >
+                                                No dogs found
+                                            </Typography>
+                                            <Typography 
+                                                variant="body1" 
+                                                sx={{ 
+                                                    mt: 2,
+                                                    color: 'text.secondary'
+                                                }}
+                                            >
+                                                Try adjusting your filters
+                                            </Typography>
+                                        </>
+                                    )}
+                                </Paper>
+                            </Box>
+                            :
+                            null
+                        }
                         {filteredDogs && filteredDogs?.map(dog => (
                             <Card sx={{ maxWidth: 345 }} classes={{ root: 'dog-item' }} key={dog.id}>
                                 <CardMedia
@@ -377,9 +533,15 @@ function Search() {
                         ))}
                         
                     </div>
-                    <div className='pagination'>
-                        {dogIds.length && <Pagination count={dogIds.length / DOGS_PER_PAGE} page={currentPage} onChange={handlePageChange} showFirstButton={true} showLastButton={true} size={'large'}/>}
-                    </div>
+                    {
+                        dogIds.length
+                        ?
+                        <div className='pagination'>
+                            <Pagination count={Math.ceil(dogIds.length / DOGS_PER_PAGE)} page={currentPage} onChange={handlePageChange} showFirstButton={true} showLastButton={true} size={'large'}/>
+                        </div>
+                        :
+                        null
+                    }
                     <Zoom
                         in={favorites.length > 0}
                         timeout={300}
@@ -428,6 +590,12 @@ function Search() {
                     open={bestMatchOpen}
                     onClose={() => setBestMatchOpen(false)}
                 />
+                <Backdrop
+                    sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+                    open={isLoading}
+                >
+                    <CircularProgress color="inherit" />
+                </Backdrop>
                 {/* Toggle button */}
                 {/* <IconButton
                     onClick={() => setIsFilterOpen(!isFilterOpen)}

@@ -23,10 +23,12 @@ code {
   .dog-list{
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    /* justify-content: space-between; */
+    justify-content: center;
     flex: 1;
     transition: 'margin-left 0.3s ease';
     row-gap: 25px;
+    column-gap: 35px;
 
     .dog-item 
     {
@@ -69,6 +71,8 @@ code {
 }
 
 #filter_sort_button {
+  color: #44acc0;
+  border-color: #44acc0;
   width: fit-content;
   margin-left: auto;
 }

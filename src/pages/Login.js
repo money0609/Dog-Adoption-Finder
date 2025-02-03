@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button, Container, TextField, Typography, Box, FormControl, FormHelperText } from '@mui/material';
 
 function Login() {
     const [user_name, setUsername] = useState('');
@@ -57,29 +58,53 @@ function Login() {
     };
 
     return (
-        <div className="login">
-            <div>
-                <input
-                    type="text"
-                    placeholder="Username"
+        <Container 
+            maxWidth="md" 
+            sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                justifyContent: 'center',
+                textAlign: 'center',
+                gap: 3
+            }}
+        >
+            <Typography variant="h2" sx={{
+                fontFamily: 'monospace',
+                fontWeight: 700,
+                color: 'rgb(68, 172, 192)',
+                fontSize: {
+                    xs: '2.1rem',
+                    sm: '2.25rem',
+                    md: '3rem'
+                },
+                mt: 10
+            }}>
+                Sign in or sign up
+            </Typography>
+            <FormControl fullWidth error={error_msg}>
+                <TextField
+                    sx={{ mt: 1 }}
+                    isRequired={true}
+                    fullWidth
+                    label="Name"
                     value={user_name}
                     onChange={(e) => setUsername(e.target.value)}
                 />
-            </div>
-            <div>
-                <input
-                    type="email"
-                    placeholder="Email"
+                <TextField
+                    sx={{ mt: 1 }}
+                    isRequired={true}
+                    fullWidth
+                    label="Email"
                     value={user_email}
                     onChange={(e) => setUseremail(e.target.value)}
                 />
-            </div>
-            {error_msg && <p className='error_message'>{error_msg}</p>}
-            <div>
-                <button onClick={handleLogin}>Login</button>
-                <a href="/register">Not a member? Register</a>
-            </div>
-        </div>
+                <FormHelperText>{error_msg ?? ''}</FormHelperText>
+            </FormControl>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 5, justifyContent:'center' }}>
+                <Button variant="contained" size="large" disabled={!user_name || !user_email} onClick={handleLogin} sx={{ background: 'rgb(68, 172, 192)', width: '150px'}}>Sign In</Button>
+                <a style={{ alignSelf: 'center' }} href="#" onClick={()=>{window.alert('Sign up feature coming soon...')}}>Not a member? Register</a>
+            </Box>
+        </Container>
     );
 }
 
