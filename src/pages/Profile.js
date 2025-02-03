@@ -12,7 +12,7 @@ export default function Profile () {
     useEffect(() => {
         const user = sessionStorage.getItem('user');
         if (!user) {
-            window.location.href = '/Dog-Adoption-Finder/login';
+            window.location.href = '/login';
         }
     }, []);
 

@@ -37,10 +37,10 @@ export default function Header() {
     const handleSettingClick = (setting) => {
         handleCloseUserMenu();
         if (setting === 'Profile') {
-            window.location.href = '/Dog-Adoption-Finder/profile';
+            window.location.href = '/profile';
         } else if (setting === 'Logout') {       
             sessionStorage.removeItem('user');
-            window.location.href = '/Dog-Adoption-Finder/login';
+            window.location.href = '/login';
         }
     };
   return (
@@ -59,7 +59,7 @@ export default function Header() {
                         variant="h6"
                         noWrap
                         component="a"
-                        href="/Dog-Adoption-Finder"
+                        href="/"
                         sx={{
                             mr: 2,
                             display: { xs: 'none', md: 'flex' },
@@ -77,7 +77,7 @@ export default function Header() {
                         variant="h5"
                         noWrap
                         component="a"
-                        href="/Dog-Adoption-Finder"
+                        href="#app-bar-with-responsive-menu"
                         sx={{
                             mr: 2,
                             display: { xs: 'flex', md: 'none' },
@@ -130,7 +130,7 @@ export default function Header() {
                                 </Menu>
                             </>
                             :
-                            <Button variant='contained' sx={{ bgcolor: 'rgb(255, 169, 0)' }} onClick={() => window.location.href = '/Dog-Adoption-Finder/login'}>Login</Button>
+                            <Button variant='contained' sx={{ bgcolor: 'rgb(255, 169, 0)' }} onClick={() => window.location.href = '/login'}>Login</Button>
                         }
                         
                     </Box>
