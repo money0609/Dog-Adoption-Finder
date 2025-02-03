@@ -13,7 +13,7 @@ function Search() {
     useEffect(() => {
         const user = sessionStorage.getItem('user');
         if (!user) {
-            window.location.href = '/Dog-Adoption-Finder/login';
+            window.location.href = '/login';
         }
     }, []);
     const [filteredDogs, setFilteredDogs] = useState([]);
@@ -89,7 +89,7 @@ function Search() {
         if (response.status === 401) {
             // Session expired, clear storage and redirect
             sessionStorage.clear();
-            window.location.href = '/Dog-Adoption-Finder/login';
+            window.location.href = '/login';
             return true;
         }
         return false;
