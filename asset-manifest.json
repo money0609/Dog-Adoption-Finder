@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Dog-Adoption-Finder/static/css/main.1018afb3.css",
+    "main.js": "/Dog-Adoption-Finder/static/js/main.dee0302d.js",
+    "static/js/453.a6a97343.chunk.js": "/Dog-Adoption-Finder/static/js/453.a6a97343.chunk.js",
+    "index.html": "/Dog-Adoption-Finder/index.html",
+    "main.1018afb3.css.map": "/Dog-Adoption-Finder/static/css/main.1018afb3.css.map",
+    "main.dee0302d.js.map": "/Dog-Adoption-Finder/static/js/main.dee0302d.js.map",
+    "453.a6a97343.chunk.js.map": "/Dog-Adoption-Finder/static/js/453.a6a97343.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1018afb3.css",
+    "static/js/main.dee0302d.js"
+  ]
+}
